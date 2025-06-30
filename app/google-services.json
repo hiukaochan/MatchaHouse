@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "782746122722",
+    "project_id": "matchahouse-cs426",
+    "storage_bucket": "matchahouse-cs426.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782746122722:android:874285434f085d981721bb",
+        "android_client_info": {
+          "package_name": "com.example.thecodecup"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6Ncd0waTJuaFLOjMKNNWetJaObWOM71Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

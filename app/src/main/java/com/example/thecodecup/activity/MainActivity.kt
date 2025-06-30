@@ -1,4 +1,4 @@
-package com.example.thecodecup.Activity
+package com.example.thecodecup.activity
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
