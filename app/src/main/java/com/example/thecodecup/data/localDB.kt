@@ -3,7 +3,13 @@ package com.example.thecodecup.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.*
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.*
+import android.content.Context
+import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 
 @Entity
 data class Drink(
@@ -33,6 +39,42 @@ data class CartItem(
     val quantity: Int,
     val totalAmount: Double // Total price for that item x quantity
 )
+
+@Entity(tableName = "orders")
+data class OrderItem(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val drinkName: String,
+    val drinkImage: String, // can be drawable name or URL
+    val sweetness: String,
+    val milkType: String,
+    val iceLevel: String,
+    val quantity: Int,
+    val totalAmount: Double,
+    val address: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
+    var status: String = "ongoing" // or "completed"
+)
+
+@Dao
+interface OrderDao {
+
+    @Query("SELECT * FROM orders WHERE status = 'ongoing' ORDER BY timestamp DESC")
+    fun getOngoingOrders(): Flow<List<OrderItem>>
+
+    @Query("SELECT * FROM orders WHERE status = 'completed' ORDER BY timestamp DESC")
+    fun getCompletedOrders(): Flow<List<OrderItem>>
+
+    @Insert
+    suspend fun insertOrderItem(item: OrderItem)
+
+    @Update
+    suspend fun updateOrderItem(item: OrderItem)
+
+    @Delete
+    suspend fun deleteOrderItem(item: OrderItem)
+}
+
+
 
 @Dao
 interface CartDao {
@@ -74,7 +116,58 @@ interface CartDao {
 }
 
 
-@Database(entities = [CartItem::class], version = 1)
+@Database(entities = [CartItem::class, OrderItem::class, UserProfile::class], version = 4)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cartDao(): CartDao
+    abstract fun orderDao(): OrderDao
+    abstract fun userProfileDao(): UserProfileDao
+    companion object {
+        @Volatile private var instance: AppDatabase? = null
+
+        fun getInstance(context: Context): AppDatabase {
+            return instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "coffee_shop_db"
+                ).fallbackToDestructiveMigration()
+                    .addCallback(object : RoomDatabase.Callback() {
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            super.onCreate(db)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                getInstance(context).userProfileDao().upsertProfile(
+                                    UserProfile(
+                                        id = 1,
+                                        fullName = "Your Name",
+                                        phoneNumber = "+84000000000",
+                                        email = "example@email.com",
+                                        address = "Your Address"
+                                    )
+                                )
+                            }
+                        }
+                    })
+                    .build().also { instance = it }
+            }
+        }
+    }
+
+}
+
+@Entity(tableName = "user_profile")
+data class UserProfile(
+    @PrimaryKey val id: Int = 0,
+    val fullName: String = "",
+    val phoneNumber: String = "",
+    val email: String = "",
+    val address: String = ""
+)
+
+@Dao
+interface UserProfileDao {
+    @Query("SELECT * FROM user_profile WHERE id = 1 LIMIT 1")
+    suspend fun getProfile(): UserProfile?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertProfile(profile: UserProfile)
 }

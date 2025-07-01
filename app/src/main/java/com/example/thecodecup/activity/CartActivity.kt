@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.thecodecup.adapter.CartItemAdapter
 import androidx.room.Room
 import com.example.thecodecup.data.AppDatabase
+import com.example.thecodecup.data.OrderItem
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.coroutines.launch
 
@@ -33,11 +34,40 @@ class CartActivity : AppCompatActivity() {
             insets
         }
 
-            val checkoutButton = findViewById<Button>(R.id.checkoutButton)
-            checkoutButton.setOnClickListener {
-                val intent = Intent(this, OrderCompleteActivity::class.java)
-                startActivity(intent)
+        val db = Room.databaseBuilder(
+            applicationContext,
+            AppDatabase::class.java,
+            "coffee_shop_db"
+        ).build()
+
+        val checkoutButton = findViewById<Button>(R.id.checkoutButton)
+        checkoutButton.setOnClickListener {
+            val intent = Intent(this, OrderCompleteActivity::class.java)
+            startActivity(intent)
+            lifecycleScope.launch {
+                val cartItems = db.cartDao().getAllCartItems().first()
+                val userProfile = db.userProfileDao().getProfile()
+
+                if (cartItems.isNotEmpty() && userProfile != null) {
+                    for (cartItem in cartItems) {
+                        val orderItem = OrderItem(
+                            drinkName = cartItem.drinkName,
+                            drinkImage = cartItem.drinkImage,
+                            sweetness = cartItem.sweetness,
+                            milkType = cartItem.milkType,
+                            iceLevel = cartItem.iceLevel,
+                            quantity = cartItem.quantity,
+                            totalAmount = cartItem.totalAmount,
+                            address = userProfile.address,
+                            status = "ongoing"
+                        )
+                        db.orderDao().insertOrderItem(orderItem)
+                    }
+                    db.cartDao().clearCart()
+                }
             }
+
+        }
 
         val recyclerView = findViewById<RecyclerView>(R.id.cartRecyclerView)
 
@@ -46,19 +76,14 @@ class CartActivity : AppCompatActivity() {
             finish()
         }
 
-        val db = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java,
-            "coffee_shop_db"
-        ).build()
-
         lifecycleScope.launch {
             val cartItems = db.cartDao().getAllCartItems().first().toMutableList()
             val adapter = CartItemAdapter(cartItems)
             recyclerView.adapter = adapter
             recyclerView.layoutManager = LinearLayoutManager(this@CartActivity)
 
-            val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            val itemTouchHelper = ItemTouchHelper(object :
+                ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
                 override fun onMove(
                     recyclerView: RecyclerView,
                     viewHolder: RecyclerView.ViewHolder,
@@ -82,6 +107,7 @@ class CartActivity : AppCompatActivity() {
         }
 
     }
+
     override fun onBackPressed() {
         super.onBackPressed()
     }

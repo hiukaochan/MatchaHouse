@@ -183,6 +183,8 @@ class DetailActivity : AppCompatActivity() {
                 Toast.makeText(this@DetailActivity, "Added to cart!", Toast.LENGTH_SHORT).show()
             }
 
+            val intent = Intent(this, CartActivity::class.java)
+            startActivity(intent)
         }
 
 
