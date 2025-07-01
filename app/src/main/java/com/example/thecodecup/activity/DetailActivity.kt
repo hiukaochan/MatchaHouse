@@ -2,6 +2,11 @@ package com.example.thecodecup.activity
 
 import android.content.Intent
 import android.os.Bundle
+import com.example.thecodecup.data.CartItem
+import com.example.thecodecup.data.AppDatabase
+import androidx.lifecycle.lifecycleScope
+import androidx.room.Room
+import kotlinx.coroutines.launch
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.TextView
@@ -20,6 +25,12 @@ class DetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_detail)
+
+        val cartIcon = findViewById<ImageView>(R.id.cart)
+        cartIcon.setOnClickListener {
+            val intent = Intent(this, CartActivity::class.java)
+            startActivity(intent)
+        }
 
         // Handle system bar padding
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -130,6 +141,50 @@ class DetailActivity : AppCompatActivity() {
             lice.isSelected = false
             iceLevel = "100%"
         }
+
+        val addToCartButton = findViewById<TextView>(R.id.addcartbutton)
+
+        addToCartButton.setOnClickListener {
+            val newItem = CartItem(
+                drinkName = drinkName,
+                drinkImage = drawableName,
+                sweetness = sweetness,
+                milkType = milkType,
+                iceLevel = iceLevel,
+                quantity = quantity,
+                totalAmount = quantity * drinkPrice.toDouble()
+            )
+
+            lifecycleScope.launch {
+                val db = Room.databaseBuilder(
+                    applicationContext,
+                    AppDatabase::class.java,
+                    "coffee_shop_db"
+                ).build()
+
+                val existingItem = db.cartDao().findMatchingCartItem(
+                    newItem.drinkName,
+                    newItem.drinkImage,
+                    newItem.sweetness,
+                    newItem.milkType,
+                    newItem.iceLevel
+                )
+
+                if (existingItem != null) {
+                    val updatedItem = existingItem.copy(
+                        quantity = existingItem.quantity + newItem.quantity,
+                        totalAmount = existingItem.totalAmount + newItem.totalAmount
+                    )
+                    db.cartDao().updateCartItem(updatedItem)
+                } else {
+                    db.cartDao().insertCartItem(newItem)
+                }
+
+                Toast.makeText(this@DetailActivity, "Added to cart!", Toast.LENGTH_SHORT).show()
+            }
+
+        }
+
 
     }
     override fun onBackPressed() {

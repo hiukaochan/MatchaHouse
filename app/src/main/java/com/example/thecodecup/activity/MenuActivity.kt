@@ -23,6 +23,12 @@ class MenuActivity : AppCompatActivity() {
 
         val drinkGrid = findViewById<GridLayout>(R.id.drinkGrid)
 
+        val cartIcon = findViewById<ImageView>(R.id.cartIcon)
+        cartIcon.setOnClickListener {
+            val intent = Intent(this, CartActivity::class.java)
+            startActivity(intent)
+        }
+
         for (drink in drinkList) {
             val cardView = layoutInflater.inflate(R.layout.item_card, drinkGrid, false)
 
