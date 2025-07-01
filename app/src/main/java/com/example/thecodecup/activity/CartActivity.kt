@@ -35,7 +35,6 @@ class CartActivity : AppCompatActivity() {
         ).build()
 
         val checkoutButton = findViewById<Button>(R.id.checkoutButton)
-        val backButton = findViewById<ImageView>(R.id.back)
         val recyclerView = findViewById<RecyclerView>(R.id.cartRecyclerView)
 
         // Checkout logic
@@ -91,7 +90,7 @@ class CartActivity : AppCompatActivity() {
                 }
             }
         }
-
+        val backButton = findViewById<ImageView>(R.id.back)
         // Back button
         backButton.setOnClickListener {
             finish()

@@ -41,6 +41,12 @@ class MenuActivity : AppCompatActivity() {
         val drinkGrid = findViewById<GridLayout>(R.id.drinkGrid)
         val cartIcon = findViewById<ImageView>(R.id.cartIcon)
         val profileIcon = findViewById<ImageView>(R.id.profileIcon)
+        val favIcon = findViewById<ImageView>(R.id.favIcon)
+
+        favIcon.setOnClickListener {
+            val intent = Intent(this, FavActivity::class.java)
+            startActivity(intent)
+        }
 
         cartIcon.setOnClickListener {
             startActivity(Intent(this, CartActivity::class.java))

@@ -2,148 +2,149 @@ package com.example.thecodecup.activity
 
 import android.content.Intent
 import android.os.Bundle
-import com.example.thecodecup.data.CartItem
-import com.example.thecodecup.data.AppDatabase
-import androidx.lifecycle.lifecycleScope
-import androidx.room.Room
-import kotlinx.coroutines.launch
-import android.widget.GridLayout
-import android.widget.ImageView
-import android.widget.TextView
-import android.view.LayoutInflater
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.thecodecup.R
-import com.example.thecodecup.data.drinkList
-import com.example.thecodecup.data.Drink
+import com.example.thecodecup.data.AppDatabase
+import com.example.thecodecup.data.CartItem
+import com.example.thecodecup.data.FavoriteDrink
+import kotlinx.coroutines.launch
 
 class DetailActivity : AppCompatActivity() {
+
+    private lateinit var db: AppDatabase
+    private lateinit var heartIcon: ImageView
+    private var isFavorite = false
+
+    private lateinit var drinkName: String
+    private var drinkPrice: Int = 0
+    private lateinit var drawableName: String
+
+    private var sweetness = "70%"
+    private var milkType = "Meiji"
+    private var iceLevel = "100%"
+    private var quantity = 1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_detail)
 
-        val cartIcon = findViewById<ImageView>(R.id.cart)
-        cartIcon.setOnClickListener {
-            val intent = Intent(this, CartActivity::class.java)
-            startActivity(intent)
-        }
+        db = AppDatabase.getInstance(this)
 
-        // Handle system bar padding
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(0, 0, 0, 0)
             insets
         }
-        val backButton = findViewById<ImageView>(R.id.back)
-        val drinkName = intent.getStringExtra("drinkName") ?: "Unknown"
-        val drinkPrice = intent.getIntExtra("drinkPrice", 0)
-        val drawableName = intent.getStringExtra("drawableName") ?: "placeholder"
-        val drinkId = intent.getIntExtra("drinkId", 0)
-        val qtyText = findViewById<TextView>(R.id.qty)
-        val plus = findViewById<TextView>(R.id.plus)
-        val minus = findViewById<TextView>(R.id.minus)
 
-// Set drink name and image
+        // Intent data
+        drinkName = intent.getStringExtra("drinkName") ?: "Unknown"
+        drinkPrice = intent.getIntExtra("drinkPrice", 0)
+        drawableName = intent.getStringExtra("drawableName") ?: "placeholder"
+
         val drinkNameTextView = findViewById<TextView>(R.id.drinkName)
         val drinkImageView = findViewById<ImageView>(R.id.drinkImage)
         val totalText = findViewById<TextView>(R.id.totalNum)
+        val qtyText = findViewById<TextView>(R.id.qty)
+        val plus = findViewById<TextView>(R.id.plus)
+        val minus = findViewById<TextView>(R.id.minus)
+        val addToCartButton = findViewById<TextView>(R.id.addcartbutton)
+        heartIcon = findViewById(R.id.favIcon)
+        val cartIcon = findViewById<ImageView>(R.id.cart)
+        val backButton = findViewById<ImageView>(R.id.back)
 
+        // UI Setup
         drinkNameTextView.text = drinkName
-        val imageResId = resources.getIdentifier(drawableName, "drawable", packageName)
-        drinkImageView.setImageResource(imageResId)
-        totalText.text = "${drinkPrice} VND"
-
-        var quantity = 1
+        drinkImageView.setImageResource(resources.getIdentifier(drawableName, "drawable", packageName))
         qtyText.text = quantity.toString()
+        totalText.text = "$drinkPrice VND"
 
         plus.setOnClickListener {
             quantity++
             qtyText.text = quantity.toString()
-            updateTotalPrice(quantity)
+            updateTotalPrice()
         }
 
         minus.setOnClickListener {
             if (quantity > 1) {
                 quantity--
                 qtyText.text = quantity.toString()
-                updateTotalPrice(quantity)
+                updateTotalPrice()
             }
+        }
+
+        cartIcon.setOnClickListener {
+            startActivity(Intent(this, CartActivity::class.java))
         }
 
         backButton.setOnClickListener {
             finish()
         }
 
+        // Selection buttons
         val lsweet = findViewById<TextView>(R.id.lsweetName)
         val rsweet = findViewById<TextView>(R.id.rsweetName)
-// Milk
         val meiji = findViewById<TextView>(R.id.meijiName)
         val oat = findViewById<TextView>(R.id.oatName)
-// Ice
         val lice = findViewById<TextView>(R.id.liceName)
         val rice = findViewById<TextView>(R.id.riceName)
 
-// Selection state
-        var sweetness = "70%"
-        var milkType = "Meiji"
-        var iceLevel = "100%"
-
-        // Default selected buttons
+        // Initial selection
         rsweet.isSelected = true
-        lsweet.isSelected = false
-
         meiji.isSelected = true
-        oat.isSelected = false
-
         rice.isSelected = true
-        lice.isSelected = false
-
 
         // Sweetness
         lsweet.setOnClickListener {
+            sweetness = "30%"
             lsweet.isSelected = true
             rsweet.isSelected = false
-            sweetness = "30%"
+            updateHeartIconFromDb()
         }
 
         rsweet.setOnClickListener {
+            sweetness = "70%"
             rsweet.isSelected = true
             lsweet.isSelected = false
-            sweetness = "70%"
+            updateHeartIconFromDb()
         }
 
-// Milk
+        // Milk
         meiji.setOnClickListener {
+            milkType = "Meiji"
             meiji.isSelected = true
             oat.isSelected = false
-            milkType = "Meiji"
+            updateHeartIconFromDb()
         }
 
         oat.setOnClickListener {
+            milkType = "Oatside"
             oat.isSelected = true
             meiji.isSelected = false
-            milkType = "Oatside"
+            updateHeartIconFromDb()
         }
 
-// Ice
+        // Ice
         lice.setOnClickListener {
+            iceLevel = "50%"
             lice.isSelected = true
             rice.isSelected = false
-            iceLevel = "50%"
+            updateHeartIconFromDb()
         }
 
         rice.setOnClickListener {
+            iceLevel = "100%"
             rice.isSelected = true
             lice.isSelected = false
-            iceLevel = "100%"
+            updateHeartIconFromDb()
         }
 
-        val addToCartButton = findViewById<TextView>(R.id.addcartbutton)
-
+        // Add to Cart
         addToCartButton.setOnClickListener {
             val newItem = CartItem(
                 drinkName = drinkName,
@@ -156,12 +157,6 @@ class DetailActivity : AppCompatActivity() {
             )
 
             lifecycleScope.launch {
-                val db = Room.databaseBuilder(
-                    applicationContext,
-                    AppDatabase::class.java,
-                    "coffee_shop_db"
-                ).build()
-
                 val existingItem = db.cartDao().findMatchingCartItem(
                     newItem.drinkName,
                     newItem.drinkImage,
@@ -181,21 +176,48 @@ class DetailActivity : AppCompatActivity() {
                 }
 
                 Toast.makeText(this@DetailActivity, "Added to cart!", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this@DetailActivity, CartActivity::class.java))
             }
-
-            val intent = Intent(this, CartActivity::class.java)
-            startActivity(intent)
         }
 
+        // Favorite icon toggle
+        lifecycleScope.launch {
+            updateHeartIconFromDb()
+        }
 
+        heartIcon.setOnClickListener {
+            lifecycleScope.launch {
+                val favorite = FavoriteDrink(drinkName, drawableName, sweetness, milkType, iceLevel)
+                if (isFavorite) {
+                    db.favoriteDrinkDao().deleteFavorite(favorite)
+                    isFavorite = false
+                } else {
+                    db.favoriteDrinkDao().insertFavorite(favorite)
+                    isFavorite = true
+                }
+                updateHeartIcon()
+            }
+        }
     }
+
+    private fun updateTotalPrice() {
+        val total = quantity * drinkPrice
+        findViewById<TextView>(R.id.totalNum).text = "$total VND"
+    }
+
+    private fun updateHeartIconFromDb() {
+        lifecycleScope.launch {
+            val favorite = db.favoriteDrinkDao().getFavorite(drinkName, sweetness, milkType, iceLevel)
+            isFavorite = favorite != null
+            updateHeartIcon()
+        }
+    }
+
+    private fun updateHeartIcon() {
+        heartIcon.setImageResource(if (isFavorite) R.drawable.fav_filled else R.drawable.fav)
+    }
+
     override fun onBackPressed() {
         super.onBackPressed()
     }
-    fun updateTotalPrice(quantity: Int) {
-        val price = intent.getIntExtra("drinkPrice", 0)
-        val total = quantity * price
-        findViewById<TextView>(R.id.totalNum).text = "${total} VND"
-    }
-
 }

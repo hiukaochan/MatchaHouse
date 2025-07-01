@@ -61,6 +61,43 @@ data class PointsHistory(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+@Entity(tableName = "favorite_drinks", primaryKeys = ["drinkName", "sweetness", "milkType", "iceLevel"])
+data class FavoriteDrink(
+    val drinkName: String,
+    val drinkImage: String,
+    val sweetness: String,
+    val milkType: String,
+    val iceLevel: String
+)
+
+@Dao
+interface FavoriteDrinkDao {
+    @Query("""
+        SELECT * FROM favorite_drinks 
+        WHERE drinkName = :drinkName 
+        AND sweetness = :sweetness 
+        AND milkType = :milkType 
+        AND iceLevel = :iceLevel 
+        LIMIT 1
+    """)
+    suspend fun getFavorite(
+        drinkName: String,
+        sweetness: String,
+        milkType: String,
+        iceLevel: String
+    ): FavoriteDrink?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertFavorite(favorite: FavoriteDrink)
+
+    @Delete
+    suspend fun deleteFavorite(favorite: FavoriteDrink)
+
+    @Query("SELECT * FROM favorite_drinks")
+    fun getAllFavorites(): Flow<List<FavoriteDrink>>
+}
+
+
 @Dao
 interface PointsHistoryDao {
     @Insert
@@ -127,14 +164,15 @@ interface CartDao {
 }
 
 @Database(
-    entities = [CartItem::class, OrderItem::class, UserProfile::class, PointsHistory::class],
-    version = 6
+    entities = [CartItem::class, OrderItem::class, UserProfile::class, PointsHistory::class, FavoriteDrink::class],
+    version = 8
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cartDao(): CartDao
     abstract fun orderDao(): OrderDao
     abstract fun userProfileDao(): UserProfileDao
     abstract fun pointsHistoryDao(): PointsHistoryDao
+    abstract fun favoriteDrinkDao(): FavoriteDrinkDao
 
     companion object {
         @Volatile private var instance: AppDatabase? = null

@@ -13,6 +13,9 @@
         android:theme="@style/Theme.TheCodeCup"
         tools:targetApi="31">
         <activity
+            android:name=".activity.FavActivity"
+            android:exported="false" />
+        <activity
             android:name=".adapter.PointHistoryAdapter"
             android:exported="false" />
         <activity
