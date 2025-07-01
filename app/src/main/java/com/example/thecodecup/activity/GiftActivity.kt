@@ -5,49 +5,51 @@ import android.os.Bundle
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.thecodecup.adapter.PointsHistoryAdapter
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.thecodecup.R
 import com.example.thecodecup.data.AppDatabase
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
 
 class GiftActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
+    private lateinit var historyRecyclerView: RecyclerView
+    private lateinit var historyAdapter: PointsHistoryAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_gift)
 
         db = AppDatabase.getInstance(this)
-        val recyclerView = findViewById<RecyclerView>(R.id.pointsRecyclerView)
-        recyclerView.layoutManager = LinearLayoutManager(this)
 
-        lifecycleScope.launch {
-            val userProfile = db.userProfileDao().getProfile()
-            if (userProfile != null) updateUserInfo(userProfile.fullName, userProfile.drinkCount, userProfile.points)
-        }
+        // Setup RecyclerView
+        historyRecyclerView = findViewById(R.id.pointsRecyclerView)
+        historyRecyclerView.layoutManager = LinearLayoutManager(this)
+        historyAdapter = PointsHistoryAdapter(mutableListOf())
+        historyRecyclerView.adapter = historyAdapter
 
-        val backButton = findViewById<Button>(R.id.redeemButton)
-        backButton.setOnClickListener {
+        val redeemButton = findViewById<Button>(R.id.redeemButton)
+        redeemButton.setOnClickListener {
             val intent = Intent(this, RedeemActivity::class.java)
             startActivity(intent)
         }
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottomNav.selectedItemId = R.id.nav_gift // or nav_menu / nav_order depending on the screen
 
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.selectedItemId = R.id.nav_gift
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_menu -> {
                     startActivity(Intent(this, MenuActivity::class.java))
                     true
                 }
-                R.id.nav_gift -> {
-                    // Already on GiftActivity
-                    true
-                }
+                R.id.nav_gift -> true
                 R.id.nav_order -> {
                     startActivity(Intent(this, OrderActivity::class.java))
                     true
@@ -55,8 +57,30 @@ class GiftActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, 0)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomNav)) { view, insets ->
+            view.setPadding(0, 0, 0, 0)
+            insets
+        }
     }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            val userProfile = db.userProfileDao().getProfile()
+            if (userProfile != null) {
+                updateUserInfo(userProfile.fullName, userProfile.drinkCount, userProfile.points)
+            }
+            db.pointsHistoryDao().getAll().collect { history ->
+                historyAdapter.updateData(history)
+            }
+        }
+    }
+
 
     private fun updateUserInfo(fullName: String, drinkCount: Int, points: Int) {
         val countTextView = findViewById<TextView>(R.id.countText)
@@ -67,7 +91,6 @@ class GiftActivity : AppCompatActivity() {
         countTextView.text = "$count/8"
         pointsValueTextView.text = points.toString()
 
-        // Clear and add cups
         cupContainer.removeAllViews()
         for (i in 1..8) {
             val imageView = ImageView(this)
@@ -82,6 +105,7 @@ class GiftActivity : AppCompatActivity() {
             cupContainer.addView(imageView)
         }
     }
+
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).toInt()
 }

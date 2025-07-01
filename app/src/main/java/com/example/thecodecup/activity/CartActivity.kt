@@ -1,49 +1,45 @@
 package com.example.thecodecup.activity
-import androidx.recyclerview.widget.ItemTouchHelper
-import kotlinx.coroutines.flow.first
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.thecodecup.R
-import android.content.Intent
-import android.widget.Button
-import android.widget.ImageView
-
-import android.widget.TextView
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.thecodecup.adapter.CartItemAdapter
 import androidx.room.Room
+import com.example.thecodecup.R
+import com.example.thecodecup.adapter.CartItemAdapter
 import com.example.thecodecup.data.AppDatabase
 import com.example.thecodecup.data.OrderItem
-import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.thecodecup.data.PointsHistory
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-
 class CartActivity : AppCompatActivity() {
+    private lateinit var db: AppDatabase
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_cart)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(0, 0, 0, 0)
-            insets
-        }
 
-        val db = Room.databaseBuilder(
+        db = Room.databaseBuilder(
             applicationContext,
             AppDatabase::class.java,
             "coffee_shop_db"
         ).build()
 
         val checkoutButton = findViewById<Button>(R.id.checkoutButton)
+        val backButton = findViewById<ImageView>(R.id.back)
+        val recyclerView = findViewById<RecyclerView>(R.id.cartRecyclerView)
+
+        // Checkout logic
         checkoutButton.setOnClickListener {
-            val intent = Intent(this, OrderCompleteActivity::class.java)
-            startActivity(intent)
             lifecycleScope.launch {
                 val cartItems = db.cartDao().getAllCartItems().first()
                 val userProfile = db.userProfileDao().getProfile()
@@ -53,7 +49,7 @@ class CartActivity : AppCompatActivity() {
                     var loyaltyPoints = userProfile.points
 
                     for (cartItem in cartItems) {
-                        // Insert to order table
+                        // Insert order
                         val orderItem = OrderItem(
                             drinkName = cartItem.drinkName,
                             drinkImage = cartItem.drinkImage,
@@ -67,12 +63,18 @@ class CartActivity : AppCompatActivity() {
                         )
                         db.orderDao().insertOrderItem(orderItem)
 
-                        // Update loyalty info
+                        // Loyalty calculation
                         drinkCount += cartItem.quantity
                         loyaltyPoints += (cartItem.totalAmount / 1000).toInt()
+
+                        // Add to points history
+                        val history = PointsHistory(
+                            drinkName = cartItem.drinkName,
+                            pointsEarned = (cartItem.totalAmount / 1000).toInt()
+                        )
+                        db.pointsHistoryDao().insert(history)
                     }
 
-                    // Cap drink count at 8 and reset
                     drinkCount %= 8
 
                     val updatedProfile = userProfile.copy(
@@ -82,19 +84,20 @@ class CartActivity : AppCompatActivity() {
                     db.userProfileDao().upsertProfile(updatedProfile)
 
                     db.cartDao().clearCart()
+
+                    // Navigate to order complete
+                    startActivity(Intent(this@CartActivity, OrderCompleteActivity::class.java))
+                    finish()
                 }
-
             }
-
         }
 
-        val recyclerView = findViewById<RecyclerView>(R.id.cartRecyclerView)
-
-        val backButton = findViewById<ImageView>(R.id.back)
+        // Back button
         backButton.setOnClickListener {
             finish()
         }
 
+        // Swipe to delete
         lifecycleScope.launch {
             val cartItems = db.cartDao().getAllCartItems().first().toMutableList()
             val adapter = CartItemAdapter(cartItems)
@@ -116,26 +119,32 @@ class CartActivity : AppCompatActivity() {
                     lifecycleScope.launch {
                         db.cartDao().deleteCartItem(item)
                         adapter.removeAt(position)
-                        updateTotalAmount(db)
+                        updateTotalAmount()
                     }
                 }
             })
             itemTouchHelper.attachToRecyclerView(recyclerView)
 
-            updateTotalAmount(db)
+            updateTotalAmount()
         }
 
+        // Insets
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, systemBars.bottom)
+            insets
+        }
     }
 
-    override fun onBackPressed() {
-        super.onBackPressed()
-    }
-
-    private fun updateTotalAmount(db: AppDatabase) {
+    private fun updateTotalAmount() {
         lifecycleScope.launch {
             val total = db.cartDao().getCartTotal().first() ?: 0.0
             val totalAmountTextView = findViewById<TextView>(R.id.totalAmountNum)
             totalAmountTextView.text = "${"%.0f".format(total)} VND"
         }
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
     }
 }

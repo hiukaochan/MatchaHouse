@@ -55,6 +55,17 @@
         app:layout_constraintEnd_toStartOf="@id/profileIcon"
         app:layout_constraintTop_toTopOf="@id/greetingText" />
 
+    <ImageView
+        android:id="@+id/favIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="28dp"
+        android:layout_marginEnd="10dp"
+        android:contentDescription="Cart"
+        android:src="@drawable/fav"
+        app:layout_constraintEnd_toStartOf="@id/cartIcon"
+        app:layout_constraintTop_toTopOf="@id/greetingText" />
+
     <LinearLayout
         android:id="@+id/loyaltyCard"
         android:layout_width="340dp"
@@ -161,7 +172,6 @@
     <!-- Bottom Nav Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
-
         android:layout_width="310dp"
         android:layout_height="64dp"
         android:layout_marginBottom="40dp"

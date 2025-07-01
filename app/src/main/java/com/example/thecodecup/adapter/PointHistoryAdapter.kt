@@ -3,7 +3,6 @@ package com.example.thecodecup.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.thecodecup.R
@@ -12,7 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class PointsHistoryAdapter(private val items: List<PointsHistory>) :
+class PointsHistoryAdapter(private val items: MutableList<PointsHistory>) :
     RecyclerView.Adapter<PointsHistoryAdapter.ViewHolder>() {
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -30,11 +29,17 @@ class PointsHistoryAdapter(private val items: List<PointsHistory>) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
         holder.drinkNameText.text = item.drinkName
-        holder.pointsText.text = "+${item.pointsEarned} pts"
+        holder.pointsText.text = if (item.pointsEarned >= 0) "+${item.pointsEarned} pts" else "${item.pointsEarned} pts"
 
         val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         holder.dateText.text = sdf.format(Date(item.timestamp))
     }
 
     override fun getItemCount() = items.size
+
+    fun updateData(newItems: List<PointsHistory>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
+    }
 }

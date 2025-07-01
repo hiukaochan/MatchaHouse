@@ -9,6 +9,8 @@ import com.example.thecodecup.R
 import com.example.thecodecup.adapter.OrderPagerAdapter
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import android.content.Intent
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class OrderActivity : AppCompatActivity() {
 
@@ -33,31 +35,28 @@ class OrderActivity : AppCompatActivity() {
         val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
         bottomNav.selectedItemId = R.id.nav_order // Or nav_menu / nav_order based on activity
 
-        bottomNav.setOnItemSelectedListener {
-            when (it.itemId) {
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
                 R.id.nav_menu -> {
-                    if (this !is MenuActivity) {
-                        startActivity(Intent(this, MenuActivity::class.java))
-                        overridePendingTransition(0, 0)
-                    }
+                    startActivity(Intent(this, MenuActivity::class.java))
                     true
                 }
+                R.id.nav_order -> true
                 R.id.nav_gift -> {
-                    if (this !is GiftActivity) {
-                        startActivity(Intent(this, GiftActivity::class.java))
-                        overridePendingTransition(0, 0)
-                    }
-                    true
-                }
-                R.id.nav_order -> {
-                    if (this !is OrderActivity) {
-                        startActivity(Intent(this, OrderActivity::class.java))
-                        overridePendingTransition(0, 0)
-                    }
+                    startActivity(Intent(this, GiftActivity::class.java))
                     true
                 }
                 else -> false
             }
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(0, 0, 0, 0)
+            insets
+        }
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.bottomNav)) { view, insets ->
+            view.setPadding(0, 0, 0, 0)
+            insets
         }
 
     }
