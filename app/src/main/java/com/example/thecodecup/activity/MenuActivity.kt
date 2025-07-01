@@ -153,6 +153,17 @@ class MenuActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            val userProfile = db.userProfileDao().getProfile()
+            userProfile?.let {
+                updateUserInfo(it.fullName, it.drinkCount)
+            }
+        }
+    }
+
+
     // Extension to convert dp to pixels
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).toInt()
