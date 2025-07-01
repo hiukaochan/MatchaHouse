@@ -5,4 +5,17 @@
         <item name="android:textColor">#000000</item>
         <item name="android:textSize">16sp</item>
     </style>
+
+<!--    <style name="BottomNavNoText" parent="Widget.MaterialComponents.BottomNavigationView">-->
+<!--        <item name="labelVisibilityMode">unlabeled</item>-->
+<!--        <item name="itemIconSize">28dp</item>-->
+<!--        <item name="itemIconTint">@colors/darkmatcha</item>-->
+<!--        <item name="itemTextAppearanceActive">@style/NoText</item>-->
+<!--        <item name="itemTextAppearanceInactive">@style/NoText</item>-->
+<!--    </style>-->
+
+<!--    <style name="NoText" parent="@android:style/TextAppearance">-->
+<!--        <item name="android:textSize">0sp</item>-->
+<!--    </style>-->
+
 </resources>

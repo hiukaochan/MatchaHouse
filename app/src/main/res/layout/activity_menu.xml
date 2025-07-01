@@ -78,67 +78,42 @@
         android:textStyle="bold" />
 
     <!-- ✅ Inner white container -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/rounded_white"
-        android:padding="12dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <!-- ✅ Cup icons and score -->
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-        <ImageView
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:src="@drawable/iced_cup"
-            android:contentDescription="Cup" />
-
-        <TextView
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/loyaltyInnerContainer"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="4/8"
-            android:textColor="#3C4F3D"
-            android:textStyle="bold" />
+            android:layout_marginTop="8dp"
+            android:background="@drawable/rounded_white"
+            android:padding="12dp">
 
-        <!-- (repeat more ImageViews here...) -->
-    </LinearLayout>
+            <!-- Horizontal container for cups -->
+            <LinearLayout
+                android:id="@+id/cupContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/countText"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Loyalty count -->
+            <TextView
+                android:id="@+id/countText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="4/8"
+                android:textColor="#3C4F3D"
+                android:textStyle="bold"
+                android:fontFamily="@font/antonio"
+                app:layout_constraintTop_toTopOf="@id/cupContainer"
+                app:layout_constraintBottom_toBottomOf="@id/cupContainer"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 </LinearLayout>
 
 
@@ -186,17 +161,18 @@
     <!-- Bottom Nav Bar -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
+
         android:layout_width="310dp"
         android:layout_height="64dp"
         android:layout_marginBottom="40dp"
+        android:layout_alignParentBottom="true"
         android:background="@drawable/rounded_navi"
         android:backgroundTint="#F8F9F4"
+        app:menu="@menu/bottom_nav"
+        app:itemIconSize="30dp"
+        app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.492"
         app:layout_constraintStart_toStartOf="parent"
-        />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
-
-<!--    app:menu="@menu/bottom_nav_menu"-->

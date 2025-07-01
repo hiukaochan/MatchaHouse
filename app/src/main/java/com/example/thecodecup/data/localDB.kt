@@ -10,7 +10,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
 @Entity
 data class Drink(
     @PrimaryKey val id: Int = 0,
@@ -29,22 +28,21 @@ val drinkList = listOf(
 @Entity(tableName = "cart_items")
 data class CartItem(
     @PrimaryKey(autoGenerate = true)
-    val id: Int = 0, // Unique local ID
-
+    val id: Int = 0,
     val drinkName: String = "",
-    val drinkImage: String = "",  // Store as URL or resource name/path
-    val sweetness: String = "", // Example: "No sugar", "50%", "100%"
-    val milkType: String = "",  // Example: "Whole milk", "Soy", "Almond"
-    val iceLevel: String = "",  // Example: "No ice", "Less", "Normal"
+    val drinkImage: String = "",
+    val sweetness: String = "",
+    val milkType: String = "",
+    val iceLevel: String = "",
     val quantity: Int,
-    val totalAmount: Double // Total price for that item x quantity
+    val totalAmount: Double
 )
 
 @Entity(tableName = "orders")
 data class OrderItem(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val drinkName: String,
-    val drinkImage: String, // can be drawable name or URL
+    val drinkImage: String,
     val sweetness: String,
     val milkType: String,
     val iceLevel: String,
@@ -52,12 +50,28 @@ data class OrderItem(
     val totalAmount: Double,
     val address: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    var status: String = "ongoing" // or "completed"
+    var status: String = "ongoing"
+)
+
+@Entity(tableName = "points_history")
+data class PointsHistory(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    val drinkName: String,
+    val pointsEarned: Int,
+    val timestamp: Long = System.currentTimeMillis()
 )
 
 @Dao
-interface OrderDao {
+interface PointsHistoryDao {
+    @Insert
+    suspend fun insert(history: PointsHistory)
 
+    @Query("SELECT * FROM points_history ORDER BY timestamp DESC")
+    fun getAll(): Flow<List<PointsHistory>>
+}
+
+@Dao
+interface OrderDao {
     @Query("SELECT * FROM orders WHERE status = 'ongoing' ORDER BY timestamp DESC")
     fun getOngoingOrders(): Flow<List<OrderItem>>
 
@@ -74,11 +88,8 @@ interface OrderDao {
     suspend fun deleteOrderItem(item: OrderItem)
 }
 
-
-
 @Dao
 interface CartDao {
-
     @Query("SELECT * FROM cart_items")
     fun getAllCartItems(): kotlinx.coroutines.flow.Flow<List<CartItem>>
 
@@ -115,12 +126,16 @@ interface CartDao {
     suspend fun updateCartItem(item: CartItem)
 }
 
-
-@Database(entities = [CartItem::class, OrderItem::class, UserProfile::class], version = 4)
+@Database(
+    entities = [CartItem::class, OrderItem::class, UserProfile::class, PointsHistory::class],
+    version = 6
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun cartDao(): CartDao
     abstract fun orderDao(): OrderDao
     abstract fun userProfileDao(): UserProfileDao
+    abstract fun pointsHistoryDao(): PointsHistoryDao
+
     companion object {
         @Volatile private var instance: AppDatabase? = null
 
@@ -141,7 +156,9 @@ abstract class AppDatabase : RoomDatabase() {
                                         fullName = "Your Name",
                                         phoneNumber = "+84000000000",
                                         email = "example@email.com",
-                                        address = "Your Address"
+                                        address = "Your Address",
+                                        drinkCount = 0,
+                                        points = 0
                                     )
                                 )
                             }
@@ -151,7 +168,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
     }
-
 }
 
 @Entity(tableName = "user_profile")
@@ -160,7 +176,9 @@ data class UserProfile(
     val fullName: String = "",
     val phoneNumber: String = "",
     val email: String = "",
-    val address: String = ""
+    val address: String = "",
+    val drinkCount: Int = 0,
+    val points: Int = 0
 )
 
 @Dao

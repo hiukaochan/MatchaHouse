@@ -49,7 +49,11 @@ class CartActivity : AppCompatActivity() {
                 val userProfile = db.userProfileDao().getProfile()
 
                 if (cartItems.isNotEmpty() && userProfile != null) {
+                    var drinkCount = userProfile.drinkCount
+                    var loyaltyPoints = userProfile.points
+
                     for (cartItem in cartItems) {
+                        // Insert to order table
                         val orderItem = OrderItem(
                             drinkName = cartItem.drinkName,
                             drinkImage = cartItem.drinkImage,
@@ -62,9 +66,24 @@ class CartActivity : AppCompatActivity() {
                             status = "ongoing"
                         )
                         db.orderDao().insertOrderItem(orderItem)
+
+                        // Update loyalty info
+                        drinkCount += cartItem.quantity
+                        loyaltyPoints += (cartItem.totalAmount / 1000).toInt()
                     }
+
+                    // Cap drink count at 8 and reset
+                    drinkCount %= 8
+
+                    val updatedProfile = userProfile.copy(
+                        drinkCount = drinkCount,
+                        points = loyaltyPoints
+                    )
+                    db.userProfileDao().upsertProfile(updatedProfile)
+
                     db.cartDao().clearCart()
                 }
+
             }
 
         }

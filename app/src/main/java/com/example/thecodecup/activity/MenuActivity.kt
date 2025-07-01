@@ -2,23 +2,22 @@ package com.example.thecodecup.activity
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.GridLayout
-import android.widget.ImageView
-import android.widget.TextView
-import android.view.LayoutInflater
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.thecodecup.R
-import com.example.thecodecup.data.drinkList
 import com.example.thecodecup.data.AppDatabase
+import com.example.thecodecup.data.drinkList
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 
 class MenuActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
+
+    // Activity result for profile completion
     private val profileResultLauncher = registerForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()
     ) {
@@ -26,7 +25,7 @@ class MenuActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 val userProfile = db.userProfileDao().getProfile()
                 userProfile?.let { profile ->
-                    findViewById<TextView>(R.id.userName).text = profile.fullName.uppercase()
+                    updateUserInfo(profile.fullName, profile.drinkCount)
                 }
             }
         }
@@ -37,11 +36,21 @@ class MenuActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_menu)
 
-        // ✅ Initialize the class-level db, not shadow it
         db = AppDatabase.getInstance(this)
 
-        val userNameTextView = findViewById<TextView>(R.id.userName)
+        val drinkGrid = findViewById<GridLayout>(R.id.drinkGrid)
+        val cartIcon = findViewById<ImageView>(R.id.cartIcon)
+        val profileIcon = findViewById<ImageView>(R.id.profileIcon)
 
+        cartIcon.setOnClickListener {
+            startActivity(Intent(this, CartActivity::class.java))
+        }
+
+        profileIcon.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+        }
+
+        // Load user data and loyalty cups
         lifecycleScope.launch {
             val userProfile = db.userProfileDao().getProfile()
             if (userProfile == null) {
@@ -54,26 +63,11 @@ class MenuActivity : AppCompatActivity() {
                 kotlinx.coroutines.delay(1000)
                 profileResultLauncher.launch(Intent(this@MenuActivity, ProfileActivity::class.java))
             } else {
-                userNameTextView.text = userProfile.fullName.uppercase()
+                updateUserInfo(userProfile.fullName, userProfile.drinkCount)
             }
         }
 
-
-        val drinkGrid = findViewById<GridLayout>(R.id.drinkGrid)
-
-        val cartIcon = findViewById<ImageView>(R.id.cartIcon)
-        cartIcon.setOnClickListener {
-            val intent = Intent(this, CartActivity::class.java)
-            startActivity(intent)
-        }
-
-        val profileIcon = findViewById<ImageView>(R.id.profileIcon)
-        profileIcon.setOnClickListener {
-            val intent = Intent(this, ProfileActivity::class.java)
-            startActivity(intent)
-        }
-
-
+        // Load all drinks
         for (drink in drinkList) {
             val cardView = layoutInflater.inflate(R.layout.item_card, drinkGrid, false)
 
@@ -96,10 +90,71 @@ class MenuActivity : AppCompatActivity() {
             drinkGrid.addView(cardView)
         }
 
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.selectedItemId = R.id.nav_menu // Or nav_menu / nav_order based on activity
+
+        bottomNav.setOnItemSelectedListener {
+            when (it.itemId) {
+                R.id.nav_menu -> {
+                    if (this !is MenuActivity) {
+                        startActivity(Intent(this, MenuActivity::class.java))
+                        overridePendingTransition(0, 0)
+                    }
+                    true
+                }
+                R.id.nav_gift -> {
+                    if (this !is GiftActivity) {
+                        startActivity(Intent(this, GiftActivity::class.java))
+                        overridePendingTransition(0, 0)
+                    }
+                    true
+                }
+                R.id.nav_order -> {
+                    if (this !is OrderActivity) {
+                        startActivity(Intent(this, OrderActivity::class.java))
+                        overridePendingTransition(0, 0)
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+
+
+        // Window Insets
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(0, 0, 0, 0)
             insets
         }
     }
+
+    private fun updateUserInfo(fullName: String, drinkCount: Int) {
+        val userNameTextView = findViewById<TextView>(R.id.userName)
+        val countTextView = findViewById<TextView>(R.id.countText)
+        val cupContainer = findViewById<LinearLayout>(R.id.cupContainer)
+
+        userNameTextView.text = fullName.uppercase()
+        val count = drinkCount.coerceIn(0, 8)
+        countTextView.text = "$count/8"
+
+        // Reset and add cups dynamically
+        cupContainer.removeAllViews()
+        for (i in 1..8) {
+            val imageView = ImageView(this@MenuActivity)
+            val layoutParams = LinearLayout.LayoutParams(30.dp, 30.dp).apply {
+                marginEnd = 4.dp
+            }
+            imageView.layoutParams = layoutParams
+
+            val drawableId = if (i <= count) R.drawable.iced_cup else R.drawable.empty_cup
+            imageView.setImageResource(drawableId)
+
+            cupContainer.addView(imageView)
+        }
+    }
+
+    // Extension to convert dp to pixels
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density).toInt()
 }
