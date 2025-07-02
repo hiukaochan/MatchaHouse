@@ -51,8 +51,6 @@ Each screen or activity interacts with the database through its corresponding **
 - **Kotlin**
 - **Room (Jetpack)**
 - **Kotlin Coroutines & Flow**
-- **RecyclerView**
-- **ViewBinding**
 - **Android Studio**
 
 ---
