@@ -37,11 +37,8 @@ Each screen or activity interacts with the database through its corresponding **
 ## ✨ Additional Features
 
 - First-time users are redirected to the **Profile** screen to update shipping info.
-- **Dynamic favorite icon** updates based on current selection state.
+- **Favorites** Screen for saving favourite drink selection with **dynamic favorite icon** updates based on current selection state.
 - Identical cart items are merged by incrementing quantity instead of duplication.
-- Swipe-to-remove gestures in **Cart** and **Favorites**.
-- **Reward redemption notifications** (success or insufficient stamps).
-- Profile editing retains user's progress data.
 - Lightweight log messages are used to notify user actions (e.g., added to cart, redeemed).
 
 ---
