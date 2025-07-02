@@ -74,7 +74,7 @@ class CartActivity : AppCompatActivity() {
                         db.pointsHistoryDao().insert(history)
                     }
 
-                    drinkCount %= 8
+//                    drinkCount %= 8
 
                     val updatedProfile = userProfile.copy(
                         drinkCount = drinkCount,

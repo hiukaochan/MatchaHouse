@@ -115,7 +115,7 @@
                 android:id="@+id/countText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="4/8"
+                android:text=""
                 android:textColor="#3C4F3D"
                 android:textStyle="bold"
                 android:fontFamily="@font/antonio"

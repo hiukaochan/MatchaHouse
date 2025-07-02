@@ -87,8 +87,8 @@ class GiftActivity : AppCompatActivity() {
         val cupContainer = findViewById<LinearLayout>(R.id.cupContainer)
         val pointsValueTextView = findViewById<TextView>(R.id.pointsValue)
 
-        val count = drinkCount.coerceIn(0, 8)
-        countTextView.text = "$count/8"
+        val stampCount = drinkCount % 8
+        countTextView.text = "$drinkCount/8"
         pointsValueTextView.text = points.toString()
 
         cupContainer.removeAllViews()
@@ -99,12 +99,41 @@ class GiftActivity : AppCompatActivity() {
             }
             imageView.layoutParams = layoutParams
 
-            val drawableId = if (i <= count) R.drawable.iced_cup else R.drawable.empty_cup
+            val drawableId = if (i <= stampCount) R.drawable.iced_cup else R.drawable.empty_cup
             imageView.setImageResource(drawableId)
 
             cupContainer.addView(imageView)
         }
+
+        // 💡 Add this click listener to allow manual redemption
+        cupContainer.setOnClickListener {
+            if (drinkCount >= 8) {
+                lifecycleScope.launch {
+                    val userProfile = db.userProfileDao().getProfile()
+                    userProfile?.let {
+                        val newCount = it.drinkCount - 8
+                        db.userProfileDao().upsertProfile(it.copy(drinkCount = newCount))
+                        runOnUiThread {
+                            Toast.makeText(
+                                this@GiftActivity,
+                                "8 stamps redeemed!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            updateUserInfo(it.fullName, newCount, it.points)
+                        }
+                    }
+                }
+            } else {
+                Toast.makeText(
+                    this@GiftActivity,
+                    "You need at least 8 stamps to redeem a reward.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
+
+
 
     private val Int.dp: Int
         get() = (this * resources.displayMetrics.density).toInt()

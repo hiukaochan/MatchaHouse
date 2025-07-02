@@ -129,29 +129,49 @@ class MenuActivity : AppCompatActivity() {
     }
 
     private fun updateUserInfo(fullName: String, drinkCount: Int) {
-        val userNameTextView = findViewById<TextView>(R.id.userName)
+        val userNameTextView = findViewById<TextView>(R.id.userName) // Only in MenuActivity
         val countTextView = findViewById<TextView>(R.id.countText)
         val cupContainer = findViewById<LinearLayout>(R.id.cupContainer)
 
-        userNameTextView.text = fullName.uppercase()
-        val count = drinkCount.coerceIn(0, 8)
-        countTextView.text = "$count/8"
+        userNameTextView?.text = fullName.uppercase() // Safe call for GiftActivity
 
-        // Reset and add cups dynamically
+        val stampCount = drinkCount % 8
+        countTextView.text = "$drinkCount/8"
+
         cupContainer.removeAllViews()
         for (i in 1..8) {
-            val imageView = ImageView(this@MenuActivity)
+            val imageView = ImageView(this)
             val layoutParams = LinearLayout.LayoutParams(30.dp, 30.dp).apply {
                 marginEnd = 4.dp
             }
             imageView.layoutParams = layoutParams
 
-            val drawableId = if (i <= count) R.drawable.iced_cup else R.drawable.empty_cup
+            val drawableId = if (i <= stampCount) R.drawable.iced_cup else R.drawable.empty_cup
             imageView.setImageResource(drawableId)
 
             cupContainer.addView(imageView)
         }
+
+        cupContainer.setOnClickListener {
+            if (drinkCount >= 8) {
+                lifecycleScope.launch {
+                    val profile = db.userProfileDao().getProfile()
+                    profile?.let {
+                        val newCount = it.drinkCount - 8
+                        db.userProfileDao().upsertProfile(it.copy(drinkCount = newCount))
+                        runOnUiThread {
+                            Toast.makeText(this@MenuActivity, "8 stamps redeemed!", Toast.LENGTH_SHORT).show()
+                            updateUserInfo(it.fullName, newCount)
+                        }
+                    }
+                }
+            } else {
+                Toast.makeText(this@MenuActivity, "Need at least 8 cups to redeem.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
+
+
 
     override fun onResume() {
         super.onResume()

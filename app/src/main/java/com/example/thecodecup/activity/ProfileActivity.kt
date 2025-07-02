@@ -62,12 +62,14 @@ class ProfileActivity : AppCompatActivity() {
     private fun loadProfile() {
         lifecycleScope.launch {
             val profile = withContext(Dispatchers.IO) {
-                db.userProfileDao().getProfile() ?: UserProfile()
+                db.userProfileDao().getProfile()
             }
-            fullNameEdit.setText(profile.fullName)
-            phoneEdit.setText(profile.phoneNumber)
-            emailEdit.setText(profile.email)
-            addressEdit.setText(profile.address)
+            profile?.let {
+                fullNameEdit.setText(it.fullName)
+                phoneEdit.setText(it.phoneNumber)
+                emailEdit.setText(it.email)
+                addressEdit.setText(it.address)
+            }
         }
     }
 
@@ -84,18 +86,30 @@ class ProfileActivity : AppCompatActivity() {
         val email = emailEdit.text.toString()
         val address = addressEdit.text.toString()
 
-        val profile = UserProfile(
-            id = 1,
-            fullName = fullName,
-            phoneNumber = phone,
-            email = email,
-            address = address
-        )
-
         lifecycleScope.launch(Dispatchers.IO) {
+            val existingProfile = db.userProfileDao().getProfile()
+
+            val profile = if (existingProfile != null) {
+                existingProfile.copy(
+                    fullName = fullName,
+                    phoneNumber = phone,
+                    email = email,
+                    address = address
+                )
+            } else {
+                UserProfile(
+                    id = 1,
+                    fullName = fullName,
+                    phoneNumber = phone,
+                    email = email,
+                    address = address
+                )
+            }
+
             db.userProfileDao().upsertProfile(profile)
         }
     }
+
 
     override fun onBackPressed() {
         super.onBackPressed()
